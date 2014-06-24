@@ -10,7 +10,7 @@ var pc;
 
 // call start(true) to initiate
 function start(isInitiator) {
-	console.log('sending chunks of size: ' + chunkSize);
+	//console.log('sending chunks of size: ' + chunkSize);
 	pc = new RTCPeerConnection(configuration);
 
 	// send any ice candidates to the other peer
@@ -20,18 +20,22 @@ function start(isInitiator) {
 	};
 
 	// let the "negotiationneeded" event trigger offer generation
-	pc.onnegotiationneeded = function () {
-		pc.createOffer(localDescCreated, logError);
-	}
+	//pc.onnegotiationneeded = function () {
+	//	pc.createOffer(localDescCreated, logError);
+	//}
 
 	if (isInitiator) {
+		/*
 		var dcOpts = {
 			ordered: false,
 			maxRetransmits: 0
 		};
+		*/
 		// create data channel and setup chat
-		var channel = pc.createDataChannel("chat", dcOpts);
+		//var channel = pc.createDataChannel("chat", dcOpts);
+		var channel = pc.createDataChannel("chat");
 		setupChannel(channel, isInitiator);
+		pc.createOffer(localDescCreated, logError);
 	} else {
 		// setup chat on incoming data channel
 		pc.ondatachannel = function (evt) {
@@ -66,7 +70,7 @@ var dcOpenTime;
 var MByte = 1024 * 1024;
 
 // NOTE: at least chromium seems to not send more than 66528 bytes of data!
-var chunkSize = 1024 * 60;
+var chunkSize = 1024 * 48;
 var chunk = new Uint8Array(chunkSize);
 // fill with random data
 for (var i = 0; i < chunk.length; i++) {
@@ -77,13 +81,14 @@ var recvdChunks = 0;
 var recvdBytes = 0;
 var printStats = _.throttle(function() {
 	if(new Date().getTime() - dcOpenTime != 0) {
-		$("#results").text("bytes recvd: " + recvdBytes + ", throughput (MB/s): " +
+		$("#results").text("throughput (MB/s): " +
 				Math.round(100 * (recvdChunks * chunkSize / MByte /
 				((new Date().getTime() - dcOpenTime) / 1000))) / 100);
 	}
 }, 1000);
 
 function setupChannel(channel, isInitiator) {
+	console.log('setupChannel()');
 	channel.onopen = function () {
 		console.log('dc onopen');
 		// e.g. enable send button
@@ -93,7 +98,7 @@ function setupChannel(channel, isInitiator) {
 		} else {
 			dcOpenTime = new Date().getTime();
 			// comment this line for simplex test
-			throughputBenchmark(channel);
+			//throughputBenchmark(channel);
 		}
 	};
 
