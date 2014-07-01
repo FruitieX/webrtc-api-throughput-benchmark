@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2014 Aalto University
+ * Copyright (c) 2014 Rasmus Eskola
+ * Licensed under the MIT License, see LICENSE for more information.
+ */
+
 // from http://www.w3.org/TR/webrtc/#peer-to-peer-data-example with minor tweaks
 var signalingChannel = new io('http://192.168.1.248:1337');
 var configuration = {
