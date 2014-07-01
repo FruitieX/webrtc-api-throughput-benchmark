@@ -69,8 +69,11 @@ signalingChannel.on('message', function (evt) {
 var dcOpenTime;
 var MByte = 1024 * 1024;
 
-// NOTE: at least chromium seems to not send more than 66528 bytes of data!
-var chunkSize = 1024 * 48;
+// NOTE: chrome/firefox seem to split the message into smaller chunks for high
+// chunkSize values
+// with chromium on the sending side, setting chunkSize too high causes the
+// data channel to be closed immediately
+var chunkSize = 1024 * 32;
 var chunk = new Uint8Array(chunkSize);
 // fill with random data
 for (var i = 0; i < chunk.length; i++) {
@@ -82,7 +85,7 @@ var recvdBytes = 0;
 var printStats = _.throttle(function() {
 	if(new Date().getTime() - dcOpenTime != 0) {
 		$("#results").text("throughput (MB/s): " +
-				Math.round(100 * (recvdChunks * chunkSize / MByte /
+				Math.round(100 * (recvdChunks * recvdBytes / MByte /
 				((new Date().getTime() - dcOpenTime) / 1000))) / 100);
 	}
 }, 1000);
@@ -104,7 +107,10 @@ function setupChannel(channel, isInitiator) {
 
 	channel.onmessage = function (evt) {
 		recvdChunks++;
-		recvdBytes = evt.data.byteLength;
+		recvdBytes = evt.data.byteLength || evt.data.size;
+		if(recvdBytes < chunkSize) {
+			console.log("didn't get entire chunk at once! got: " + recvdBytes + '/' + chunkSize);
+		}
 
 		printStats();
 	};
@@ -118,14 +124,14 @@ var maxBuffer = 1000000;
 var sentChunks = 0;
 var sendTimer;
 function throughputBenchmark(channel) {
-	clearInterval(sendTimer);
+	//clearInterval(sendTimer);
 	sendTimer = setInterval(function() {
 		if(channel.bufferedAmount >= maxBuffer) {
 			printBuffer();
 		} else {
 			channel.send(chunk);
 		}
-	});
+	}, 0);
 }
 
 function logError(error) {
