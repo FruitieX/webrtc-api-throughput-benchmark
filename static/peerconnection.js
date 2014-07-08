@@ -5,7 +5,7 @@
  */
 
 // from http://www.w3.org/TR/webrtc/#peer-to-peer-data-example with minor tweaks
-var signalingChannel = new io('http://192.168.1.248:1337');
+var signalingChannel = new io('http://192.168.1.51:1337');
 var configuration = {
 	"iceServers": [
 		{ url: 'stun:stun.l.google.com:19302' }
@@ -31,15 +31,14 @@ function start(isInitiator) {
 	//}
 
 	if (isInitiator) {
-		/*
 		var dcOpts = {
 			ordered: false,
 			maxRetransmits: 0
 		};
-		*/
-		// create data channel and setup chat
-		//var channel = pc.createDataChannel("chat", dcOpts);
-		var channel = pc.createDataChannel("chat");
+
+		// setup data channel
+		//var channel = pc.createDataChannel("benchmark", dcOpts);
+        var channel = pc.createDataChannel("benchmark");
 		setupChannel(channel, isInitiator);
 		pc.createOffer(localDescCreated, logError);
 	} else {
@@ -79,7 +78,7 @@ var MByte = 1024 * 1024;
 // chunkSize values
 // with chromium on the sending side, setting chunkSize too high causes the
 // data channel to be closed immediately
-var chunkSize = 1024 * 32;
+var chunkSize = 1024 * 2;
 var chunk = new Uint8Array(chunkSize);
 // fill with random data
 for (var i = 0; i < chunk.length; i++) {
@@ -135,7 +134,9 @@ function throughputBenchmark(channel) {
 		if(channel.bufferedAmount >= maxBuffer) {
 			printBuffer();
 		} else {
-			channel.send(chunk);
+            while (channel.bufferedAmount < maxBuffer) {
+                channel.send(chunk);
+            }
 		}
 	}, 0);
 }
